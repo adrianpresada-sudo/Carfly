@@ -1,0 +1,22 @@
+---
+export const prerender = true;
+import Base from '../../layouts/Base.astro';
+import { LANGS, t, type Lang } from '../../i18n';
+import { FAQ } from '../../data/content';
+import { faqSchema, breadcrumbSchema } from '../../lib/schema';
+
+export function getStaticPaths() { return LANGS.map((lang) => ({ params: { lang } })); }
+const lang = Astro.params.lang as Lang;
+const d = t(lang);
+---
+<Base lang={lang} title={d.faq.title} description={d.faq.description} path="/faq/"
+  jsonld={[faqSchema(FAQ[lang]), breadcrumbSchema([{ name: 'Carfly', url: `/${lang}/` }, { name: d.faq.h1, url: `/${lang}/faq/` }])]}>
+  <div class="wrap section stack" style="max-width: 900px">
+    <h1>{d.faq.h1}</h1>
+    <div class="card">
+      {FAQ[lang].map((x) => (
+        <section class="qa"><h2 style="font-family: var(--body); font-size: 18px; margin-bottom: 6px">{x.q}</h2><p class="muted">{x.a}</p></section>
+      ))}
+    </div>
+  </div>
+</Base>

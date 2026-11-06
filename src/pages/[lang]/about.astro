@@ -1,0 +1,32 @@
+---
+export const prerender = true;
+import Base from '../../layouts/Base.astro';
+import { LANGS, t, type Lang } from '../../i18n';
+import { FACTS } from '../../data/content';
+import { orgSchema, breadcrumbSchema } from '../../lib/schema';
+import { BUSINESS } from '../../data/business';
+
+export function getStaticPaths() { return LANGS.map((lang) => ({ params: { lang } })); }
+const lang = Astro.params.lang as Lang;
+const d = t(lang);
+const contact: [string, string][] = [
+  ...(BUSINESS.legalName ? [[lang === 'ro' ? 'Firmă' : 'Company', `${BUSINESS.legalName}${BUSINESS.vatId ? `, CUI ${BUSINESS.vatId}` : ''}`] as [string, string]] : []),
+  ...(BUSINESS.phone ? [[lang === 'ro' ? 'Telefon' : 'Phone', BUSINESS.phone] as [string, string]] : []),
+  ...(BUSINESS.email ? [['Email', BUSINESS.email] as [string, string]] : []),
+];
+---
+<Base lang={lang} title={d.facts.title} description={d.facts.description} path="/about/"
+  jsonld={[orgSchema(lang), breadcrumbSchema([{ name: 'Carfly', url: `/${lang}/` }, { name: d.facts.h1, url: `/${lang}/about/` }])]}>
+  <div class="wrap section stack" style="max-width: 900px">
+    <h1>{d.facts.h1}</h1>
+    <div class="answer"><p>{d.home.answer}</p></div>
+    <div class="table-wrap">
+      <table class="facts">
+        <tbody>
+          {[...FACTS[lang], ...contact].map(([k, v]) => <tr><th scope="row">{k}</th><td>{v}</td></tr>)}
+        </tbody>
+      </table>
+    </div>
+    <p class="small muted"><a href={`/${lang}/prices/`}>{d.nav.prices}</a> · <a href={`/${lang}/conditions/`}>{d.footer.conditions}</a> · <a href={`/${lang}/faq/`}>{d.nav.faq}</a></p>
+  </div>
+</Base>

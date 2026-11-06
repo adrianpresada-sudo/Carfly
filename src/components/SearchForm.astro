@@ -1,0 +1,40 @@
+---
+// Formularul de căutare. Funcționează fără JavaScript: trimite datele prin GET la /{lang}/cars/.
+import { t, type Lang } from '../i18n';
+interface Props { lang: Lang; pickupDate?: string; pickupTime?: string; returnDate?: string; returnTime?: string }
+const { lang } = Astro.props;
+const d = t(lang);
+const pad = (n: number) => String(n).padStart(2, '0');
+const iso = (dt: Date) => `${dt.getUTCFullYear()}-${pad(dt.getUTCMonth() + 1)}-${pad(dt.getUTCDate())}`;
+const now = new Date();
+const a = new Date(now.getTime() + 7 * 86_400_000);
+const b = new Date(now.getTime() + 12 * 86_400_000);
+const pickupDate = Astro.props.pickupDate ?? iso(a);
+const returnDate = Astro.props.returnDate ?? iso(b);
+const pickupTime = Astro.props.pickupTime ?? '10:00';
+const returnTime = Astro.props.returnTime ?? '10:00';
+const times: string[] = [];
+for (let h = 0; h < 24; h++) { times.push(`${pad(h)}:00`, `${pad(h)}:30`); }
+const today = iso(now);
+---
+<form class="search" method="get" action={`/${lang}/cars/`}>
+  <div class="field">
+    <label for="loc">{d.search.pickup} / {d.search.ret}</label>
+    <select id="loc" name="location"><option value="otp">{d.search.location}</option></select>
+  </div>
+  <div class="field">
+    <label for="pd">{d.search.pickupWhen}</label>
+    <div class="field-row">
+      <input id="pd" type="date" name="pd" value={pickupDate} min={today} required />
+      <select name="pt" aria-label={d.search.pickupTime}>{times.map((x) => <option value={x} selected={x === pickupTime}>{x}</option>)}</select>
+    </div>
+  </div>
+  <div class="field">
+    <label for="rd">{d.search.returnWhen}</label>
+    <div class="field-row">
+      <input id="rd" type="date" name="rd" value={returnDate} min={today} required />
+      <select name="rt" aria-label={d.search.returnTime}>{times.map((x) => <option value={x} selected={x === returnTime}>{x}</option>)}</select>
+    </div>
+  </div>
+  <button class="btn" type="submit">{d.search.submit}</button>
+</form>

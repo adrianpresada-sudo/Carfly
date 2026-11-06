@@ -1,0 +1,12 @@
+---
+// Siluetă de mașină, folosită până la fotografiile proprii ale flotei.
+interface Props { name: string }
+const { name } = Astro.props;
+---
+<div class="car-visual" role="img" aria-label={name}>
+  <svg width="150" height="56" viewBox="-1 -1 37 14" aria-hidden="true">
+    <path d="M1 10.6 V5.4 C1 4.6 1.5 4 2.3 3.9 L5.6 3.6 L8 1 C8.5 0.5 9.2 0.2 10 0.2 L20.2 0.2 C21 0.2 21.7 0.5 22.2 1.1 L26.4 5 L33 6 C34.2 6.2 35 7.2 35 8.4 V10.6 C35 11.2 34.6 11.6 34 11.6 H2 C1.4 11.6 1 11.2 1 10.6 Z" fill="#B9CCE0"></path>
+    <circle cx="8.5" cy="11.6" r="2.6" fill="#8FA9C4"></circle>
+    <circle cx="27.5" cy="11.6" r="2.6" fill="#8FA9C4"></circle>
+  </svg>
+</div>

@@ -1,0 +1,90 @@
+---
+import '@fontsource/inter/400.css';
+import '@fontsource/inter/600.css';
+import '@fontsource/inter/700.css';
+import '@fontsource/space-grotesk/700.css';
+import '../styles/global.css';
+import Logo from '../components/Logo.astro';
+import { LANGS, LANG_NAME, t, type Lang } from '../i18n';
+import { BUSINESS } from '../data/business';
+
+interface Props {
+  lang: Lang;
+  title: string;
+  description: string;
+  /** Calea fără prefixul de limbă, cu slash la început și la sfârșit, ex. "/prices/". */
+  path: string;
+  jsonld?: Record<string, unknown>[];
+  noindex?: boolean;
+}
+
+const { lang, title, description, path, jsonld = [], noindex = false } = Astro.props;
+const d = t(lang);
+const site = BUSINESS.url;
+const canonical = `${site}/${lang}${path}`;
+const href = (l: Lang, p = path) => `/${l}${p}`;
+---
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {noindex ? <meta name="robots" content="noindex, follow" /> : <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />}
+    <link rel="canonical" href={canonical} />
+    {LANGS.map((l) => <link rel="alternate" hreflang={l} href={`${site}/${l}${path}`} />)}
+    <link rel="alternate" hreflang="x-default" href={`${site}/en${path}`} />
+    <link rel="alternate" type="text/markdown" title="llms.txt" href="/llms.txt" />
+    <link rel="alternate" type="application/json" title="Carfly prices" href="/prices.json" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Carfly" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content={lang === 'ro' ? 'ro_RO' : 'en_GB'} />
+    {jsonld.map((j) => <script type="application/ld+json" set:html={JSON.stringify(j)} />)}
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap">
+        <Logo href={`/${lang}/`} label="Carfly" />
+        <nav class="nav" aria-label="Main">
+          <a href={`/${lang}/cars/`}>{d.nav.cars}</a>
+          <a href={`/${lang}/prices/`}>{d.nav.prices}</a>
+          <a href={`/${lang}/guides/`}>{d.nav.guides}</a>
+          <a href={`/${lang}/faq/`}>{d.nav.faq}</a>
+          <a href={`/${lang}/about/`}>{d.nav.facts}</a>
+          <span class="lang-switch">
+            {LANGS.map((l, i) => (
+              <>
+                {i > 0 && ' · '}
+                {l === lang ? <b>{l.toUpperCase()}</b> : <a href={href(l)} hreflang={l} lang={l} title={LANG_NAME[l]}>{l.toUpperCase()}</a>}
+              </>
+            ))}
+          </span>
+        </nav>
+      </div>
+    </header>
+    <main>
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div class="wrap">
+        <div>
+          <div><b>Carfly</b> · {BUSINESS.pickup.name}, {BUSINESS.pickup.locality}</div>
+          {BUSINESS.legalName && <div>{BUSINESS.legalName}{BUSINESS.vatId && ` · CUI ${BUSINESS.vatId}`}{BUSINESS.registeredAddress && ` · ${BUSINESS.registeredAddress}`}</div>}
+          {BUSINESS.phone && <div><a href={`tel:${BUSINESS.phone.replace(/\s/g, '')}`}>{BUSINESS.phone}</a></div>}
+          <div>{d.footer.prices}</div>
+        </div>
+        <nav aria-label="Footer">
+          <a href={`/${lang}/conditions/`}>{d.footer.conditions}</a>
+          <a href={`/${lang}/prices/`}>{d.nav.prices}</a>
+          <a href={`/${lang}/about/`}>{d.nav.facts}</a>
+          <a href="https://anpc.ro/ce-este-sal/" rel="noopener">ANPC SAL</a>
+        </nav>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,27 @@
+---
+export const prerender = true;
+import Base from '../../layouts/Base.astro';
+import { LANGS, t, type Lang } from '../../i18n';
+import { CONDITIONS } from '../../data/content';
+import { breadcrumbSchema } from '../../lib/schema';
+
+export function getStaticPaths() { return LANGS.map((lang) => ({ params: { lang } })); }
+const lang = Astro.params.lang as Lang;
+const d = t(lang);
+const title = lang === 'ro' ? 'Condiții de închiriere auto — Carfly Otopeni' : 'Car rental conditions — Carfly Otopeni';
+const desc = lang === 'ro'
+  ? 'Condițiile de închiriere Carfly pe scurt: șofer, ce include prețul, daune, combustibil, durată, ieșire din țară și plată.'
+  : 'Carfly rental conditions in short: driver, what the price includes, damage, fuel, rental period, driving abroad and payment.';
+---
+<Base lang={lang} title={title} description={desc} path="/conditions/"
+  jsonld={[breadcrumbSchema([{ name: 'Carfly', url: `/${lang}/` }, { name: d.footer.conditions, url: `/${lang}/conditions/` }])]}>
+  <div class="wrap section stack" style="max-width: 900px">
+    <h1>{d.footer.conditions}</h1>
+    <p class="small muted">{lang === 'ro' ? 'Rezumat. Contractul de închiriere semnat la predare este documentul complet.' : 'Summary. The rental contract signed at pick-up is the full document.'}</p>
+    <div class="card">
+      {CONDITIONS[lang].map((x) => (
+        <section class="qa"><h2 style="font-family: var(--body); font-size: 18px; margin-bottom: 6px">{x.h}</h2><p class="muted">{x.p}</p></section>
+      ))}
+    </div>
+  </div>
+</Base>

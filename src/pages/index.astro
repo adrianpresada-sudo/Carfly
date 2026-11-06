@@ -1,0 +1,7 @@
+---
+// Rădăcina site-ului: trimite vizitatorul la limba potrivită (română pentru browsere în română, altfel engleză).
+export const prerender = false;
+const accept = Astro.request.headers.get('accept-language') ?? '';
+const lang = /^\s*ro\b/i.test(accept) ? 'ro' : 'en';
+return Astro.redirect(`/${lang}/`, 302);
+---

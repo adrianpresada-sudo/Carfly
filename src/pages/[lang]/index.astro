@@ -1,0 +1,78 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+import SearchForm from '../../components/SearchForm.astro';
+import { isLang, t, CATEGORY_NAMES } from '../../i18n';
+import { CATEGORY_ORDER } from '../../data/fleet';
+import { cheapestInCategory } from '../../lib/pricing';
+import { FAQ } from '../../data/content';
+import { orgSchema, faqSchema } from '../../lib/schema';
+import { GUIDES } from '../../data/guides';
+
+const { lang } = Astro.params;
+if (!isLang(lang)) return new Response(null, { status: 404 });
+const d = t(lang);
+const error = Astro.url.searchParams.get('error');
+const faqTop = FAQ[lang].slice(0, 5);
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+---
+<Base lang={lang} title={d.home.title} description={d.home.description} path="/" jsonld={[orgSchema(lang), faqSchema(faqTop)]}>
+  <section class="hero">
+    <div class="wrap">
+      <div class="stack" style="max-width: 760px">
+        <h1>{d.home.h1a}<br />{d.home.h1b}</h1>
+        <p class="lead">{d.home.lead}</p>
+      </div>
+      <SearchForm lang={lang} />
+      {error === 'short' && <p class="error" role="alert">{d.search.tooShort}</p>}
+      {error === 'invalid' && <p class="error" role="alert">{d.search.invalid}</p>}
+    </div>
+  </section>
+
+  <div class="wrap">
+    <section class="section stack">
+      <div class="answer"><p>{d.home.answer}</p></div>
+      <div class="grid">
+        {d.promises.map((p) => (
+          <div class="promise"><h3>{p.t}</h3><p class="small muted">{p.d}</p></div>
+        ))}
+      </div>
+    </section>
+
+    <section class="section stack" aria-labelledby="cat-h">
+      <h2 id="cat-h">{d.home.categoriesTitle}</h2>
+      <p class="muted small">{d.home.categoriesNote}</p>
+      <div class="grid">
+        {CATEGORY_ORDER.map((c) => (
+          <a class="card" href={`/${lang}/cars/?cat=${c}`} style="text-decoration: none; color: inherit; display: flex; justify-content: space-between; align-items: baseline; gap: 12px">
+            <b>{CATEGORY_NAMES[lang][c]}</b>
+            <span>{d.from} <b class="price" style="font-size: 22px">{cheapestInCategory(c)} €</b> {d.perDay}</span>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <section class="section stack" aria-labelledby="trips-h">
+      <h2 id="trips-h">{d.home.tripsTitle}</h2>
+      <div class="grid">
+        {GUIDES.map((g) => (
+          <a class="card" href={`/${lang}/guides/${g.slug}/`} style="text-decoration: none; color: inherit; display: flex; flex-direction: column; gap: 6px">
+            <span class="kicker">{g.meta[lang]}</span>
+            <h3>{g.title[lang]}</h3>
+            <p class="small muted">{g.summary[lang]}</p>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <section class="section stack" aria-labelledby="faq-h">
+      <h2 id="faq-h">{d.faq.h1}</h2>
+      <div class="card">
+        {faqTop.map((x) => (
+          <div class="qa"><h3>{x.q}</h3><p class="muted">{x.a}</p></div>
+        ))}
+      </div>
+      <p><a href={`/${lang}/faq/`}>{d.nav.faq} →</a></p>
+    </section>
+  </div>
+</Base>

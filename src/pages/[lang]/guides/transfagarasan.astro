@@ -1,0 +1,159 @@
+---
+export const prerender = true;
+import Base from '../../../layouts/Base.astro';
+import { LANGS, t, type Lang } from '../../../i18n';
+import { faqSchema, breadcrumbSchema, articleSchema } from '../../../lib/schema';
+import { cheapestInCategory } from '../../../lib/pricing';
+
+export function getStaticPaths() { return LANGS.map((lang) => ({ params: { lang } })); }
+const lang = Astro.params.lang as Lang;
+const d = t(lang);
+const suv = cheapestInCategory('suv');
+const PUBLISHED = '2026-11-06';
+const MODIFIED = '2026-11-06';
+
+const C = {
+  en: {
+    title: 'Transfăgărășan road trip from Bucharest Airport: 3-day loop, season, tips | Carfly',
+    description: 'How to drive the Transfăgărășan from Bucharest Otopeni Airport in a rental car: opening season, driving hours, a 3-day loop of about 620 km, distances and practical tips.',
+    h1: 'The Transfăgărășan road trip from Bucharest Airport: a 3-day loop',
+    byline: 'Updated 6 November 2026 · By the Carfly team',
+    answer: 'Yes, you can drive the Transfăgărășan (DN7C) in a rental car from Otopeni Airport. The high section is usually open from 1 July to 31 October, weather permitting, and traffic is allowed only between 07:00 and 21:00. Plan 3 days for a loop of about 620 km: Curtea de Argeș, Vidraru Dam, Bâlea Lake at 2,042 m, then Sibiu and back to Bucharest.',
+    factsTitle: 'Quick facts',
+    facts: [
+      ['Road', 'DN7C, 114 km across the Făgăraș Mountains'],
+      ['Highest point', 'Bâlea Lake, 2,042 m'],
+      ['Open season', 'Usually 1 July – 31 October; dates change with the weather (in 2025 it opened on 6 June)'],
+      ['Driving hours', '07:00 – 21:00 only'],
+      ['Loop from Otopeni', 'About 620 km, 3 days'],
+      ['Best car', 'Any car in good condition; a compact SUV or an automatic is more relaxed on the hairpins'],
+      ['Road tax', 'A rovinieta is needed on national roads; it is included in every Carfly rental'],
+    ],
+    daysTitle: 'Day by day',
+    days: [
+      ['Day 1 · about 205 km', 'Otopeni → Curtea de Argeș → Vidraru', 'Pick up your car at Arrivals and take the A1 towards Pitești (about 2 h 30 min to Curtea de Argeș). Visit the Curtea de Argeș Monastery, fill the tank, then drive about 30 km north to Vidraru Dam, built in 1965. Sleep near the lake.'],
+      ['Day 2 · about 120 km', 'Poenari → Bâlea Lake → Sibiu', 'Start early. Climb the 1,480 steps to Poenari Fortress (30–45 minutes), then drive the hairpins up to Bâlea Lake. Go through the tunnel, down past Bâlea Waterfall and on to Sibiu for the night.'],
+      ['Day 3 · about 290 km', 'Sibiu → Otopeni', 'Morning in Sibiu’s old town, then back towards Bucharest, about 4 hours. Return the car at Otopeni Airport.'],
+    ],
+    tipsTitle: 'Before you go',
+    tips: [
+      ['Check the road status the day before.', 'The high section can close for snow, fog or roadworks, even in summer.'],
+      ['Never feed or approach bears.', 'They often stand by the road near Vidraru and Bâlea. Stay in the car and keep the windows closed.'],
+      ['Fill up before the mountains.', 'Do not count on petrol stations on the mountain section.'],
+      ['Bring a jacket.', 'At Bâlea Lake it is much colder than in Bucharest, even in summer.'],
+      ['Arrive early.', 'Parking at Bâlea Lake fills up by late morning in July and August.'],
+    ],
+    faqTitle: 'Questions travellers ask',
+    faq: [
+      { q: 'Is the Transfăgărășan open in winter?', a: 'No. The high section usually closes from November to the end of June because of snow. In winter, drive the Prahova Valley to Brașov instead.' },
+      { q: 'How long does it take to drive the Transfăgărășan itself?', a: 'The 114 km take about 3–4 hours without stops. With photo stops, Poenari Fortress and Bâlea Lake, plan a full day.' },
+      { q: 'Can I drive the Transfăgărășan with an automatic car?', a: 'Yes, and many drivers find it easier on the hairpins. Carfly has automatic economy cars, SUVs and hybrids.' },
+      { q: 'Is there a toll on the Transfăgărășan?', a: 'There is no separate toll for the road. You need a rovinieta for Romanian national roads, which is included in every Carfly rental.' },
+    ],
+    ctaTitle: 'Pick up at Otopeni, drive the Transfăgărășan',
+    cta: `Compact SUVs from ${suv} € a day for 4–7 days. Zero liability for damage, no deposit, unlimited km, pay at pick-up.`,
+    ctaBtn: 'See cars and prices',
+    sources: 'Sources',
+    approx: 'Distances and times are approximate.',
+  },
+  ro: {
+    title: 'Transfăgărășan din Aeroportul Otopeni: traseu de 3 zile, sezon, sfaturi | Carfly',
+    description: 'Cum faci Transfăgărășanul cu o mașină închiriată din Aeroportul Otopeni: când e deschis, orele de circulație, o buclă de 3 zile de aproximativ 620 km, distanțe și sfaturi practice.',
+    h1: 'Transfăgărășan din Aeroportul Otopeni: bucla de 3 zile',
+    byline: 'Actualizat pe 6 noiembrie 2026 · Echipa Carfly',
+    answer: 'Da, poți face Transfăgărășanul (DN7C) cu o mașină închiriată din Aeroportul Otopeni. Porțiunea înaltă e deschisă de regulă între 1 iulie și 31 octombrie, dacă vremea permite, iar circulația e permisă doar între 07:00 și 21:00. Planifică 3 zile pentru o buclă de aproximativ 620 km: Curtea de Argeș, Barajul Vidraru, Bâlea Lac la 2.042 m, apoi Sibiu și întoarcerea la București.',
+    factsTitle: 'Pe scurt',
+    facts: [
+      ['Drumul', 'DN7C, 114 km peste Munții Făgăraș'],
+      ['Punctul cel mai înalt', 'Bâlea Lac, 2.042 m'],
+      ['Sezon', 'De regulă 1 iulie – 31 octombrie; datele se schimbă după vreme (în 2025 s-a deschis pe 6 iunie)'],
+      ['Ore de circulație', 'Doar între 07:00 și 21:00'],
+      ['Bucla din Otopeni', 'Aproximativ 620 km, 3 zile'],
+      ['Ce mașină', 'Orice mașină în stare bună; un SUV compact sau o mașină automată e mai comodă pe serpentine'],
+      ['Taxe', 'Rovinieta e necesară pe drumurile naționale și e inclusă în orice închiriere Carfly'],
+    ],
+    daysTitle: 'Zi cu zi',
+    days: [
+      ['Ziua 1 · aproximativ 205 km', 'Otopeni → Curtea de Argeș → Vidraru', 'Ridici mașina de la Sosiri și iei A1 spre Pitești (circa 2 h 30 min până la Curtea de Argeș). Vizitezi Mănăstirea Curtea de Argeș, alimentezi, apoi urci circa 30 km spre nord, la Barajul Vidraru, construit în 1965. Dormi lângă lac.'],
+      ['Ziua 2 · aproximativ 120 km', 'Poenari → Bâlea Lac → Sibiu', 'Pornești devreme. Urci cele 1.480 de trepte până la Cetatea Poenari (30–45 de minute), apoi serpentinele până la Bâlea Lac. Treci prin tunel, cobori pe lângă Bâlea Cascadă și mergi la Sibiu pentru noapte.'],
+      ['Ziua 3 · aproximativ 290 km', 'Sibiu → Otopeni', 'Dimineața în centrul vechi al Sibiului, apoi spre București, circa 4 ore. Returnezi mașina la Aeroportul Otopeni.'],
+    ],
+    tipsTitle: 'Înainte să pleci',
+    tips: [
+      ['Verifică starea drumului cu o zi înainte.', 'Porțiunea înaltă se poate închide pentru zăpadă, ceață sau lucrări, chiar și vara.'],
+      ['Nu hrăni și nu te apropia de urși.', 'Apar des pe marginea drumului lângă Vidraru și Bâlea. Rămâi în mașină, cu geamurile închise.'],
+      ['Alimentează înainte de munte.', 'Nu te baza pe benzinării pe porțiunea de munte.'],
+      ['Ia o haină groasă.', 'La Bâlea Lac e mult mai frig decât în București, chiar și vara.'],
+      ['Pleacă devreme.', 'Parcarea de la Bâlea Lac se umple până la prânz în iulie și august.'],
+    ],
+    faqTitle: 'Întrebări frecvente',
+    faq: [
+      { q: 'Transfăgărășanul e deschis iarna?', a: 'Nu. Porțiunea înaltă e de regulă închisă din noiembrie până la sfârșitul lui iunie, din cauza zăpezii. Iarna poți merge pe Valea Prahovei spre Brașov.' },
+      { q: 'Cât durează să conduci pe Transfăgărășan?', a: 'Cei 114 km se parcurg în circa 3–4 ore fără opriri. Cu opriri pentru poze, Cetatea Poenari și Bâlea Lac, planifică o zi întreagă.' },
+      { q: 'Pot face Transfăgărășanul cu o mașină automată?', a: 'Da, și mulți șoferi o găsesc mai ușoară pe serpentine. Carfly are mașini economice automate, SUV-uri și hibride.' },
+      { q: 'Se plătește taxă pe Transfăgărășan?', a: 'Nu există o taxă separată pentru drum. Ai nevoie de rovinietă pentru drumurile naționale, inclusă în orice închiriere Carfly.' },
+    ],
+    ctaTitle: 'Ridici mașina la Otopeni, pleci pe Transfăgărășan',
+    cta: `SUV-uri compacte de la ${suv} € pe zi, pentru 4–7 zile. Zero răspundere pentru daune, fără garanție, km nelimitați, plată la ridicare.`,
+    ctaBtn: 'Vezi mașinile și prețurile',
+    sources: 'Surse',
+    approx: 'Distanțele și duratele sunt aproximative.',
+  },
+}[lang];
+
+const path = '/guides/transfagarasan/';
+---
+<Base lang={lang} title={C.title} description={C.description} path={path}
+  jsonld={[
+    articleSchema({ lang, headline: C.h1, description: C.description, url: `/${lang}${path}`, datePublished: PUBLISHED, dateModified: MODIFIED }),
+    faqSchema(C.faq),
+    breadcrumbSchema([{ name: 'Carfly', url: `/${lang}/` }, { name: d.guides.h1, url: `/${lang}/guides/` }, { name: 'Transfăgărășan', url: `/${lang}${path}` }]),
+  ]}>
+  <article class="wrap section stack" style="max-width: 1000px; gap: 28px">
+    <nav class="breadcrumb" aria-label="Breadcrumb"><ol><li><a href={`/${lang}/`}>Carfly</a></li><li><a href={`/${lang}/guides/`}>{d.guides.h1}</a></li><li aria-current="page">Transfăgărășan</li></ol></nav>
+    <header class="stack" style="gap: 10px">
+      <h1>{C.h1}</h1>
+      <p class="small muted"><time datetime={MODIFIED}>{C.byline}</time></p>
+    </header>
+    <div class="answer"><p>{C.answer}</p></div>
+
+    <section class="stack">
+      <h2>{C.factsTitle}</h2>
+      <div class="table-wrap"><table class="facts"><tbody>{C.facts.map(([k, v]) => <tr><th scope="row">{k}</th><td>{v}</td></tr>)}</tbody></table></div>
+    </section>
+
+    <section class="stack">
+      <h2>{C.daysTitle}</h2>
+      <ol class="grid" style="list-style: none; padding: 0; margin: 0">
+        {C.days.map(([k, h, p]) => (
+          <li class="card stack" style="gap: 8px"><span class="kicker">{k}</span><h3>{h}</h3><p class="muted">{p}</p></li>
+        ))}
+      </ol>
+      <p class="small muted">{C.approx}</p>
+    </section>
+
+    <section class="stack">
+      <h2>{C.tipsTitle}</h2>
+      <ol style="margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 10px">
+        {C.tips.map(([b, p]) => <li><b>{b}</b> {p}</li>)}
+      </ol>
+    </section>
+
+    <section class="stack">
+      <h2>{C.faqTitle}</h2>
+      <div class="card">{C.faq.map((x) => <div class="qa"><h3>{x.q}</h3><p class="muted">{x.a}</p></div>)}</div>
+    </section>
+
+    <section class="card" style="background: var(--navy); color: #fff; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px">
+      <div class="stack" style="gap: 6px; max-width: 620px"><h2 style="font-size: 24px">{C.ctaTitle}</h2><p style="color: #d5e1ee">{C.cta}</p></div>
+      <a class="btn" href={`/${lang}/cars/?cat=suv`}>{C.ctaBtn}</a>
+    </section>
+
+    <footer class="small muted">
+      {C.sources}:
+      <a href="https://romaniatourism.com/scenic-drives-romania-transfagarasan.html" rel="noopener">Romania Tourism – Transfăgărășan</a>,
+      <a href="https://casteluldracula.ro/en/tourist-attractions-transfagarasan-poenari-dracula/" rel="noopener">Poenari Fortress</a>,
+      <a href="https://playtech.ro/2025/cea-mai-frumoasa-sosea-din-romania-se-redeschide-cand-se-va-putea-circula-din-nou-pe-tranfagarasan-si-intre-ce-ore/" rel="noopener">CNAIR 2025 (Playtech)</a>.
+    </footer>
+  </article>
+</Base>

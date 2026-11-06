@@ -1,0 +1,86 @@
+---
+export const prerender = false;
+import Base from '../../../layouts/Base.astro';
+import SearchForm from '../../../components/SearchForm.astro';
+import CarVisual from '../../../components/CarVisual.astro';
+import { isLang, t, CATEGORY_NAMES, FUEL_NAMES } from '../../../i18n';
+import { FLEET, CATEGORY_ORDER, type CategoryId } from '../../../data/fleet';
+import { quote, referenceRate } from '../../../lib/pricing';
+import { readTrip, tripQuery, niceDate } from '../../../lib/dates';
+import { fleetListSchema, orgSchema } from '../../../lib/schema';
+
+const { lang } = Astro.params;
+if (!isLang(lang)) return new Response(null, { status: 404 });
+const d = t(lang);
+const params = Astro.url.searchParams;
+const tr = readTrip(params);
+if (tr.status === 'invalid' || tr.status === 'short') return Astro.redirect(`/${lang}/?error=${tr.status}`, 303);
+const trip = tr.status === 'ok' ? tr.trip : null;
+
+const catParam = params.get('cat');
+const cat = CATEGORY_ORDER.includes(catParam as CategoryId) ? (catParam as CategoryId) : null;
+const cars = FLEET.filter((c) => !cat || c.category === cat);
+
+const rows = cars
+  .map((car) => ({ car, q: trip ? quote(car, trip.pickup, trip.ret) : null }))
+  .sort((a, b) => (a.q && b.q ? a.q.total - b.q.total : referenceRate(a.car) - referenceRate(b.car)));
+
+const base = `/${lang}/cars/`;
+const keep = trip ? `${tripQuery(trip)}&` : '';
+const chipHref = (c: CategoryId | null) => `${base}?${keep}${c ? `cat=${c}` : ''}`.replace(/[?&]$/, '');
+const bookHref = (id: string) => `/${lang}/book/${id}/${trip ? `?${tripQuery(trip)}` : ''}`;
+// Pagina cu date de căutare e personală; varianta fără date e cea indexată.
+const noindex = !!trip || !!cat;
+if (!noindex) Astro.response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+---
+<Base lang={lang} title={d.cars.title} description={d.cars.description} path="/cars/" noindex={noindex} jsonld={noindex ? [] : [orgSchema(lang), fleetListSchema(lang)]}>
+  <div class="wrap section stack">
+    <h1>{d.cars.h1}</h1>
+    {trip ? (
+      <div class="card" style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px">
+        <span><b>{d.search.location}</b> · {niceDate(trip.pickup, lang)} → {niceDate(trip.ret, lang)} · <b>{rows[0]?.q?.days} {d.day(rows[0]?.q?.days ?? 0)}</b></span>
+        <a class="chip" href={`/${lang}/`}>{d.search.change}</a>
+      </div>
+    ) : (
+      <>
+        <p class="muted">{d.cars.pickDates}</p>
+        <SearchForm lang={lang} />
+      </>
+    )}
+
+    <nav class="chips" aria-label={d.prices.category}>
+      <a class="chip" href={chipHref(null)} aria-current={cat === null ? 'true' : undefined}>{d.cars.all}</a>
+      {CATEGORY_ORDER.map((c) => (
+        <a class="chip" href={chipHref(c)} aria-current={cat === c ? 'true' : undefined}>{CATEGORY_NAMES[lang][c]}</a>
+      ))}
+    </nav>
+
+    {!trip && <p class="muted small">{d.cars.fromNote}</p>}
+
+    <div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(290px, 1fr))">
+      {rows.map(({ car, q }) => (
+        <article class="car">
+          <CarVisual name={car.name} />
+          <div>
+            <div class="kicker" style="color: var(--slate)">{CATEGORY_NAMES[lang][car.category]}</div>
+            <h2 style="font-size: 22px">{car.name} <span class="small muted" style="font-family: var(--body); font-weight: 500">{d.orSimilar}</span></h2>
+          </div>
+          <ul class="specs">
+            <li>{d.gear[car.gear]}</li>
+            <li>{d.seats(car.seats)}</li>
+            {car.fuel && <li>{FUEL_NAMES[lang][car.fuel]}</li>}
+          </ul>
+          <p class="small muted">{d.cars.includes}</p>
+          <div class="car-foot">
+            {q ? (
+              <div><div class="price">{q.total} €</div><div class="small muted">{q.days} {d.day(q.days)} · {q.averageRate} € {d.perDay}</div></div>
+            ) : (
+              <div><div class="small muted">{d.from}</div><div class="price">{referenceRate(car)} € <span class="small muted" style="font-family: var(--body); font-weight: 500">{d.perDay}</span></div></div>
+            )}
+            <a class="btn" href={bookHref(car.id)}>{d.cars.choose}</a>
+          </div>
+        </article>
+      ))}
+    </div>
+  </div>
+</Base>

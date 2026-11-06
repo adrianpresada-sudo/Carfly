@@ -1,0 +1,26 @@
+---
+export const prerender = true;
+import Base from '../../../layouts/Base.astro';
+import { LANGS, t, type Lang } from '../../../i18n';
+import { GUIDES } from '../../../data/guides';
+import { breadcrumbSchema } from '../../../lib/schema';
+
+export function getStaticPaths() { return LANGS.map((lang) => ({ params: { lang } })); }
+const lang = Astro.params.lang as Lang;
+const d = t(lang);
+---
+<Base lang={lang} title={d.guides.title} description={d.guides.description} path="/guides/"
+  jsonld={[breadcrumbSchema([{ name: 'Carfly', url: `/${lang}/` }, { name: d.guides.h1, url: `/${lang}/guides/` }])]}>
+  <div class="wrap section stack">
+    <h1>{d.guides.h1}</h1>
+    <div class="grid">
+      {GUIDES.map((g) => (
+        <a class="card" href={`/${lang}/guides/${g.slug}/`} style="text-decoration: none; color: inherit; display: flex; flex-direction: column; gap: 6px">
+          <span class="kicker">{g.meta[lang]}</span>
+          <h2 style="font-size: 22px">{g.title[lang]}</h2>
+          <p class="small muted">{g.summary[lang]}</p>
+        </a>
+      ))}
+    </div>
+  </div>
+</Base>

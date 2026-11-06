@@ -1,0 +1,163 @@
+---
+// Rezervarea, ca pe CarHunt: rezumat + opționale + datele clientului. Funcționează fără JavaScript.
+export const prerender = false;
+import Base from '../../../layouts/Base.astro';
+import CarVisual from '../../../components/CarVisual.astro';
+import SearchForm from '../../../components/SearchForm.astro';
+import { isLang, t, CATEGORY_NAMES, FUEL_NAMES } from '../../../i18n';
+import { carById } from '../../../data/fleet';
+import { EXTRAS } from '../../../data/extras';
+import { PERIODS } from '../../../data/periods';
+import { quote } from '../../../lib/pricing';
+import { readTrip, tripQuery, niceDate } from '../../../lib/dates';
+import { newRef, submitBooking } from '../../../lib/bookings';
+
+const { lang, car: carId } = Astro.params;
+if (!isLang(lang)) return new Response(null, { status: 404 });
+const car = carById(String(carId));
+if (!car) return new Response(null, { status: 404 });
+const d = t(lang);
+
+const isPost = Astro.request.method === 'POST';
+const form = isPost ? await Astro.request.formData() : null;
+const src = new URLSearchParams();
+if (form) {
+  for (const k of ['pd', 'pt', 'rd', 'rt']) src.set(k, String(form.get(k) ?? ''));
+} else {
+  for (const k of ['pd', 'pt', 'rd', 'rt']) { const v = Astro.url.searchParams.get(k); if (v) src.set(k, v); }
+}
+const tr = readTrip(src);
+const trip = tr.status === 'ok' ? tr.trip : null;
+if (tr.status === 'invalid' || tr.status === 'short') return Astro.redirect(`/${lang}/?error=${tr.status}`, 303);
+
+const validExtra = (x: string) => EXTRAS.some((e) => e.id === x);
+const extras = (form ? form.getAll('x') : Astro.url.searchParams.getAll('x')).map(String).filter(validExtra);
+
+const values = {
+  name: String(form?.get('name') ?? '').trim().slice(0, 120),
+  phone: String(form?.get('phone') ?? '').trim().slice(0, 40),
+  email: String(form?.get('email') ?? '').trim().slice(0, 160),
+  flight: String(form?.get('flight') ?? '').trim().slice(0, 20),
+  terms: form?.get('terms') === 'on',
+};
+
+let error = false;
+let done: { ref: string; total: number } | null = null;
+const q = trip ? quote(car, trip.pickup, trip.ret, extras) : null;
+
+if (isPost && trip && q) {
+  const honeypot = String(form?.get('website') ?? '');
+  const phoneOk = (values.phone.match(/\d/g) ?? []).length >= 7;
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email);
+  if (honeypot) {
+    done = { ref: newRef(), total: q.total };
+  } else if (!values.name || !phoneOk || !emailOk || !values.terms) {
+    error = true;
+  } else {
+    const ref = newRef();
+    await submitBooking({
+      ref, lang, carId: car.id, carName: car.name,
+      pickup: `${trip.pd}T${trip.pt}`, return: `${trip.rd}T${trip.rt}`, days: q.days,
+      extras, total: q.total, name: values.name, phone: values.phone, email: values.email, flight: values.flight,
+      createdAt: new Date().toISOString(),
+    });
+    done = { ref, total: q.total };
+  }
+}
+
+const periodName = (id: string | null) => {
+  if (!id) return d.book.standard;
+  const p = PERIODS.find((x) => x.id === id);
+  return p ? p.name[lang] : d.book.period;
+};
+const back = `/${lang}/cars/${trip ? `?${tripQuery(trip)}` : ''}`;
+Astro.response.headers.set('Cache-Control', 'no-store');
+---
+<Base lang={lang} title={`${car.name} — ${d.book.title}`} description={d.cars.description} path={`/book/${car.id}/`} noindex>
+  <div class="wrap section stack">
+    {done && trip ? (
+      <div class="card stack" style="max-width: 720px">
+        <div class="kicker">{d.book.ref}: {done.ref}</div>
+        <h1 style="font-size: 34px">{d.book.doneTitle}</h1>
+        <p class="muted">{d.book.doneText(values.name.split(' ')[0] || values.name, car.name, niceDate(trip.pickup, lang), done.total)}</p>
+        <p><a class="btn btn-ghost" href={`/${lang}/`}>{d.book.home}</a></p>
+      </div>
+    ) : (
+      <>
+        <a href={back}>{d.book.back}</a>
+        <div class="card" style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center">
+          <div style="width: 200px"><CarVisual name={car.name} /></div>
+          <div>
+            <div class="kicker" style="color: var(--slate)">{CATEGORY_NAMES[lang][car.category]}</div>
+            <h1 style="font-size: 30px">{car.name} <span class="small muted" style="font-family: var(--body); font-weight: 500">{d.orSimilar}</span></h1>
+            <p class="small muted">{d.gear[car.gear]} · {d.seats(car.seats)}{car.fuel && ` · ${FUEL_NAMES[lang][car.fuel]}`}</p>
+          </div>
+        </div>
+
+        {!trip || !q ? (
+          <div class="stack">
+            <p class="muted">{d.cars.pickDates}</p>
+            <SearchForm lang={lang} />
+          </div>
+        ) : (
+          <div class="two-col">
+            <div class="main stack">
+              <form class="card" method="get" action={`/${lang}/book/${car.id}/`} id="extras-form">
+                <h2 style="font-size: 22px">{d.book.extras}</h2>
+                {(['pd', 'pt', 'rd', 'rt'] as const).map((k) => <input type="hidden" name={k} value={trip[k]} />)}
+                {EXTRAS.map((e) => (
+                  <div class="extra">
+                    <label><input type="checkbox" name="x" value={e.id} checked={extras.includes(e.id)} /> <span><b>{e.name[lang]}</b><br /><span class="small muted">{e.note[lang]}</span></span></label>
+                    <b>{e.price} €</b>
+                  </div>
+                ))}
+                <p style="margin-top: 12px"><button class="btn btn-ghost" type="submit">{d.book.update}</button></p>
+              </form>
+
+              <form class="card stack" method="post" action={`/${lang}/book/${car.id}/`}>
+                <h2 style="font-size: 24px">{d.book.who}</h2>
+                <p class="small muted">{d.book.noCard}</p>
+                {(['pd', 'pt', 'rd', 'rt'] as const).map((k) => <input type="hidden" name={k} value={trip[k]} />)}
+                {extras.map((x) => <input type="hidden" name="x" value={x} />)}
+                <div class="form-grid">
+                  <div class="field"><label for="name">{d.book.name}</label><input id="name" name="name" autocomplete="name" value={values.name} required /></div>
+                  <div class="field"><label for="phone">{d.book.phone}</label><input id="phone" name="phone" type="tel" autocomplete="tel" value={values.phone} required /></div>
+                  <div class="field"><label for="email">{d.book.email}</label><input id="email" name="email" type="email" autocomplete="email" value={values.email} required /></div>
+                  <div class="field"><label for="flight">{d.book.flight}</label><input id="flight" name="flight" value={values.flight} /></div>
+                </div>
+                <p class="small muted">{d.book.flightNote}</p>
+                <div class="sr-only" aria-hidden="true"><label>Website <input name="website" tabindex="-1" autocomplete="off" /></label></div>
+                <label class="check"><input type="checkbox" name="terms" checked={values.terms} required /> <span>{d.book.terms} <a href={`/${lang}/conditions/`}>{d.footer.conditions}</a></span></label>
+                {error && <p class="error" role="alert">{d.book.missing}</p>}
+                <button class="btn" type="submit">{d.book.confirm} · {q.total} €</button>
+              </form>
+            </div>
+
+            <aside class="card stack">
+              <h2 style="font-size: 22px">{d.book.summary}</h2>
+              <p class="small muted">{d.search.location}<br />{niceDate(trip.pickup, lang)} → {niceDate(trip.ret, lang)}</p>
+              <div class="stack" style="gap: 8px; border-top: 1px solid var(--line); padding-top: 12px">
+                {q.lines.map((l) => (
+                  <div class="line"><span>{q.lines.length > 1 ? `${periodName(l.periodId)}: ` : ''}{l.days} {d.day(l.days)} × {l.rate} €</span><b>{l.subtotal} €</b></div>
+                ))}
+                {q.extras.map((x) => (
+                  <div class="line"><span>{EXTRAS.find((e) => e.id === x.id)?.name[lang]}</span><b>{x.price} €</b></div>
+                ))}
+                <div class="line muted"><span>{d.book.damage}</span><span>0 €</span></div>
+                <div class="line muted"><span>{d.book.deposit}</span><span>{car.deposit} €</span></div>
+              </div>
+              <div class="line" style="align-items: baseline; border-top: 1px solid var(--line); padding-top: 12px"><b>{d.book.total}</b><span class="price">{q.total} €</span></div>
+              <p class="small muted">{d.book.payNote}</p>
+            </aside>
+          </div>
+        )}
+      </>
+    )}
+  </div>
+  <script is:inline>
+    // Opțional: recalculează totalul imediat ce bifezi un opțional (fără JavaScript merge butonul).
+    document.querySelectorAll('#extras-form input[type=checkbox]').forEach(function (el) {
+      el.addEventListener('change', function () { el.form.submit(); });
+    });
+  </script>
+</Base>

@@ -1,0 +1,56 @@
+---
+export const prerender = true;
+import Base from '../../layouts/Base.astro';
+import { LANGS, t, TIER_LABELS, CATEGORY_NAMES, LOCALE, type Lang } from '../../i18n';
+import { FLEET, CATEGORY_ORDER } from '../../data/fleet';
+import { PERIODS } from '../../data/periods';
+import { orgSchema, fleetListSchema, breadcrumbSchema } from '../../lib/schema';
+
+export function getStaticPaths() { return LANGS.map((lang) => ({ params: { lang } })); }
+const lang = Astro.params.lang as Lang;
+const d = t(lang);
+const tiers = TIER_LABELS[lang];
+const updated = new Date().toLocaleDateString(LOCALE[lang], { day: 'numeric', month: 'long', year: 'numeric' });
+const fmt = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDateString(LOCALE[lang], { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+---
+<Base lang={lang} title={d.prices.title} description={d.prices.description} path="/prices/"
+  jsonld={[orgSchema(lang), fleetListSchema(lang), breadcrumbSchema([{ name: 'Carfly', url: `/${lang}/` }, { name: d.prices.h1, url: `/${lang}/prices/` }])]}>
+  <div class="wrap section stack">
+    <h1>{d.prices.h1}</h1>
+    <p class="small muted">{lang === 'ro' ? 'Actualizat' : 'Updated'}: {updated} · EUR {lang === 'ro' ? 'pe zi, cu TVA' : 'per day, VAT included'}</p>
+    <div class="answer"><p>{d.prices.answer}</p></div>
+
+    <section class="stack">
+      <h2>{d.prices.periodsTitle}</h2>
+      {PERIODS.length === 0 ? <p class="muted">{d.prices.noPeriods}</p> : (
+        <>
+          <p class="muted">{d.prices.periodsNote}</p>
+          <ul>{PERIODS.map((p) => <li><b>{p.name[lang]}</b>: {fmt(p.from)} – {fmt(p.to)}</li>)}</ul>
+        </>
+      )}
+    </section>
+
+    {CATEGORY_ORDER.map((cat) => (
+      <section class="stack" style="gap: 10px">
+        <h2 style="font-size: 24px">{CATEGORY_NAMES[lang][cat]}</h2>
+        <div class="table-wrap">
+          <table>
+            <caption class="sr-only">{CATEGORY_NAMES[lang][cat]} — {d.prices.h1}</caption>
+            <thead>
+              <tr><th scope="col">{d.prices.car}</th>{tiers.map((x) => <th scope="col" class="num">{x}</th>)}<th scope="col" class="num">{d.book.deposit}</th></tr>
+            </thead>
+            <tbody>
+              {FLEET.filter((c) => c.category === cat).map((car) => (
+                <tr>
+                  <th scope="row"><a href={`/${lang}/book/${car.id}/`}>{car.name}</a></th>
+                  {car.prices.map((p) => <td class="num">{p} €</td>)}
+                  <td class="num">{car.deposit} €</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    ))}
+  </div>
+</Base>
